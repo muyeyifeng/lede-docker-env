@@ -1,0 +1,123 @@
+#
+# This is free software, lisence use MIT.
+# 
+
+####需要设置secrets.ALIDOCKER_KEY####
+####阿里云镜像仓库-->访问权限-->固定密码####
+
+name: Env-for-build-lede
+
+on:
+  push:
+    branches: 
+      - main
+    paths-ignore:
+      - "*.md"
+  schedule:
+    - cron: 30 18 * * 0/3
+
+env:
+  action_state: run
+  GITHUB_EMAIL: muyeyifeng@gmail.com	#email
+  GITHUB_USER: muyeyifeng
+  DOCKER_REGISTRY_USERNAME: muyeyifeng@163.com	#email
+  DOCKER_REGISTRY_HOST: registry.cn-shanghai.aliyuncs.com
+  DOCKER_REGISTRY_URL: registry.cn-shanghai.aliyuncs.com/muyeyifeng/
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          ref: main
+          fetch-depth: 1000000
+
+      - name: Clone source code
+        run:  |
+          git clone  https://github.com/coolsnowwolf/lede
+          git clone  https://github.com/muyeyifeng/Actions-Build-Lede-Public
+
+      - name: Show Last md5
+        run:  |
+          cat md5 | tail -n 1 |awk '{print $1}'
+
+      - name: Check MD5
+        run:  |
+          cd lede
+          git log -1 --format=%cd
+          echo -n "$(git log -1 --format=%cd)" |md5sum
+          echo -n "$(git log -1 --format=%cd)" |md5sum > tmpmd5
+          if [[ "$(cat ../md5 | tail -n 1 |awk '{print $1}')" == "$(cat tmpmd5| tail -n 1 |awk '{print $1}')" ]]; then
+                  echo "action_state=cancel" >> $GITHUB_ENV;
+          else
+                  echo -n "$(git log -1 --format=%cd)" |md5sum >> ../md5;
+          fi
+
+      - name: Space cleanup
+        if: env.action_state == 'run'
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          docker rmi `docker images -q`
+          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d
+          sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
+          sudo -E apt-get update
+          #=========================
+          sudo -E apt-get -y install tree
+          sudo -E apt-get -y autoremove --purge
+          sudo -E apt-get clean
+          df -h
+
+      - name: Build DockerImage
+        if: env.action_state == 'run'
+        run: |
+          docker build -f ./Dockerfile -t lede-docker-env:$(date +%Y%m%d%H%M%S) .
+
+      - name: Push DockerImage
+        if: env.action_state == 'run'
+        run: |
+         sudo docker login --username=$DOCKER_REGISTRY_USERNAME --password=${{ secrets.ALIDOCKER_KEY }}  $DOCKER_REGISTRY_HOST
+         echo "============================="
+         sudo docker images
+         echo "============================="
+         ImageId=$(sudo docker images | grep "lede" | awk '{print $3}')
+         echo "============================="
+         echo $ImageId
+         echo "============================="
+         sudo docker tag $ImageId $DOCKER_REGISTRY_URL"lede-docker-env":latest
+         sudo docker push $DOCKER_REGISTRY_URL"lede-docker-env":latest
+         tag=$(date +%Y%m%d%H%M%S)
+         sudo docker tag $ImageId $DOCKER_REGISTRY_URL"lede-docker-env":$tag
+         sudo docker push $DOCKER_REGISTRY_URL"lede-docker-env":$tag
+
+      - name: Push this source
+        if: env.action_state == 'run'
+        run: |
+          rm -rf lede Actions-Build-Lede-Public docker-build
+          echo "${{ secrets.GHB_KEY }}" >github.pem
+          eval `ssh-agent`
+          chmod 600 github.pem
+          ssh-add github.pem
+          mkdir -p ~/.ssh/
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          
+          ls
+          echo "============ git config ============"
+          git config --global user.email ${GITHUB_EMAIL}
+          git config --global user.name ${GITHUB_USER}
+          echo "============ git commit ============"
+          rm -rf github.pem
+          if( ${{ github.event_name == 'push' }} );then
+            git add -f .
+            git commit --no-verify -m "Update md5" 
+          else
+            git add .
+            git commit -m "Update md5" 
+          fi
+          echo "============ git push ============"
+          git push
