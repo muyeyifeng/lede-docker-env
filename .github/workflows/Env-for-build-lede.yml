@@ -105,6 +105,9 @@ jobs:
          tag=$(date +%Y%m%d%H%M%S)
          sudo docker tag $ImageId $DOCKER_REGISTRY_URL"lede-docker-env":$tag
          sudo docker push $DOCKER_REGISTRY_URL"lede-docker-env":$tag
+         #test
+         sudo docker tag $ImageId muyeyifeng/lede-docker-env:$tag
+         sudo docker push muyeyifeng/lede-docker-env:$tag
 
       - name: Push this source
         if: env.action_state == 'run'
