@@ -93,7 +93,7 @@ jobs:
       - name: Push DockerImage
         if: env.action_state == 'run'
         run: |
-         sudo docker login --username=$DOCKER_REGISTRY_USERNAME --password-stdin=${{ secrets.ALIDOCKER_KEY }}  $DOCKER_REGISTRY_HOST
+         sudo docker login --username=$DOCKER_REGISTRY_USERNAME --password=${{ secrets.ALIDOCKER_KEY }}  $DOCKER_REGISTRY_HOST
          echo "============================="
          sudo docker images
          echo "============================="
@@ -107,7 +107,8 @@ jobs:
          sudo docker tag $ImageId $DOCKER_REGISTRY_URL"lede-docker-env":$tag
          sudo docker push $DOCKER_REGISTRY_URL"lede-docker-env":$tag
          #test
-         sudo docker login --username=$HUBDOCKER_REGISTRY_USERNAME --password-stdin=${{ secrets.HUBDOCKER_KEY }} 
+         sudo docker login --username=$HUBDOCKER_REGISTRY_USERNAME --password-
+=${{ secrets.HUBDOCKER_KEY }} 
          sudo docker tag $ImageId muyeyifeng/lede-docker-env:$tag
          sudo docker push muyeyifeng/lede-docker-env:$tag
 
