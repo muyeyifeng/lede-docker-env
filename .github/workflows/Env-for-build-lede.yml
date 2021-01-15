@@ -104,10 +104,12 @@ jobs:
          tag=$(date +%Y%m%d%H%M%S)
          sudo docker tag $ImageId $DOCKER_REGISTRY_URL"lede-docker-env":latest
          sudo docker tag $ImageId $DOCKER_REGISTRY_URL"lede-docker-env":$tag
+         sudo docker tag $ImageId muyeyifeng/lede-docker-env:latest
          sudo docker tag $ImageId muyeyifeng/lede-docker-env:$tag
 
          #push hub.docker.com
          sudo docker login --username=$HUBDOCKER_REGISTRY_USERNAME --password=${{ secrets.HUBDOCKER_KEY }} 
+         sudo docker push muyeyifeng/lede-docker-env:latest
          sudo docker push muyeyifeng/lede-docker-env:$tag
 
          #push Aliyun
