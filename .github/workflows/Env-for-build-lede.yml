@@ -93,12 +93,6 @@ jobs:
       - name: Push DockerImage
         if: env.action_state == 'run'
         run: |
-         #push hub.docker.com
-         sudo docker login --username=$HUBDOCKER_REGISTRY_USERNAME --password=${{ secrets.HUBDOCKER_KEY }} 
-         sudo docker tag $ImageId muyeyifeng/lede-docker-env:$tag
-         sudo docker push muyeyifeng/lede-docker-env:$tag
-         #push Aliyun
-         sudo docker login --username=$DOCKER_REGISTRY_USERNAME --password=${{ secrets.ALIDOCKER_KEY }}  $DOCKER_REGISTRY_HOST
          echo "============================="
          sudo docker images
          echo "============================="
@@ -106,10 +100,19 @@ jobs:
          echo "============================="
          echo $ImageId
          echo "============================="
-         sudo docker tag $ImageId $DOCKER_REGISTRY_URL"lede-docker-env":latest
-         sudo docker push $DOCKER_REGISTRY_URL"lede-docker-env":latest
+
          tag=$(date +%Y%m%d%H%M%S)
+         sudo docker tag $ImageId $DOCKER_REGISTRY_URL"lede-docker-env":latest
          sudo docker tag $ImageId $DOCKER_REGISTRY_URL"lede-docker-env":$tag
+         sudo docker tag $ImageId muyeyifeng/lede-docker-env:$tag
+
+         #push hub.docker.com
+         sudo docker login --username=$HUBDOCKER_REGISTRY_USERNAME --password=${{ secrets.HUBDOCKER_KEY }} 
+         sudo docker push muyeyifeng/lede-docker-env:$tag
+
+         #push Aliyun
+         sudo docker login --username=$DOCKER_REGISTRY_USERNAME --password=${{ secrets.ALIDOCKER_KEY }}  $DOCKER_REGISTRY_HOST
+         sudo docker push $DOCKER_REGISTRY_URL"lede-docker-env":latest
          sudo docker push $DOCKER_REGISTRY_URL"lede-docker-env":$tag
 
       - name: Push this source
