@@ -1,4 +1,4 @@
-#Version 0.0.1
+#Version 0.0.2
 FROM ubuntu:20.04
 MAINTAINER muyeyifeng@gmail.com
 ENV DEBIAN_FRONTEND=noninteractive
